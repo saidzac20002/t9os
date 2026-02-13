@@ -67,7 +67,7 @@ navigator.serviceWorker?.register("/uv/sw.js")
 
 // BareMux connection (optional, for WebSocket transport)
 const connection = new BareMux.BareMuxConnection("/baremux/worker.js")
-connection.setTransport("/libcurl/index.mjs", [{ websocket: "wss://wisp.rhw.one/" }])
+connection.setTransport("/libcurl/index.mjs", [{ websocket: "wss://webmath.help/wisp/" }])
 
 const tabsEl = document.getElementById("tabs")
 const newTabBtn = document.getElementById("newtab")
