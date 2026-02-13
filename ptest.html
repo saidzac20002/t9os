@@ -60,31 +60,23 @@ body { background-repeat: no-repeat; background-size: cover; margin: 0; padding:
     <h1>T9 Browser</h1>
 </div>
 
+<!-- ... keep all your HTML and CSS ... -->
+
 <script>
-// --- SERVICE WORKER ---
 navigator.serviceWorker?.register("/uv/sw.js")
 
-// --- BAREMUX + WISP ---
+// BareMux connection (optional, for WebSocket transport)
 const connection = new BareMux.BareMuxConnection("/baremux/worker.js")
 connection.setTransport("/libcurl/index.mjs", [{ websocket: "wss://wisp.rhw.one/" }])
 
-// --- DOM ELEMENTS ---
 const tabsEl = document.getElementById("tabs")
 const newTabBtn = document.getElementById("newtab")
 const urlInput = document.getElementById("url")
 const ntp = document.getElementById("ntp")
 const form = document.getElementById("form")
 
-// --- TABS STATE ---
 let tabs = [], activeId = null, idCounter = 0
 
-// --- UV CONFIG ---
-window.__uv$config = {
-    prefix: "/uv/",
-    encodeUrl: url => btoa(url)
-}
-
-// --- TAB FUNCTIONS ---
 function createTab(url="") {
     const id = idCounter++
     const iframe = document.createElement("iframe")
@@ -138,36 +130,35 @@ function navigate(input, push=true){
     if(!tab) return
     const url = normalize(input)
 
-    // --- Trigger BareMux transport ---
-    if(typeof transport === "function") transport()
+    // Use the UV bundle's encodeUrl
+    const uvUrl = __uv$config.prefix + __uv$config.encodeUrl(url)
 
     if(push){
-        tab.history = tab.history.slice(0, tab.index+1)
+        tab.history = tab.history.slice(0,tab.index+1)
         tab.history.push(url)
         tab.index++
     }
 
-    tab.iframe.src = __uv$config.prefix + __uv$config.encodeUrl(url)
+    tab.iframe.src = uvUrl
     urlInput.value = url
     ntp.style.display="none"
 
     tab.iframe.onload = () => {
-        const title = tab.iframe.contentDocument?.title || new URL(url).hostname
-        tab.tabBtn.querySelector("span").textContent = title
+        tab.tabBtn.querySelector("span").textContent = tab.iframe.contentDocument?.title || new URL(url).hostname
     }
 }
 
 function getTab(){ return tabs.find(t=>t.id===activeId) }
 
-// --- CONTROLS ---
 back.onclick = () => { const t=getTab(); if(!t||t.index<=0) return; t.index--; navigate(t.history[t.index], false) }
 forward.onclick = () => { const t=getTab(); if(!t||t.index>=t.history.length-1) return; t.index++; navigate(t.history[t.index], false) }
-reload.onclick = () => { const t=getTab(); if(!t) return; t.iframe.src=t.iframe.src }
-popout.onclick = () => { const t=getTab(); if(!t) return; window.open(t.iframe.src, "_blank") }
+reload.onclick = () => { const t=getTab(); if(!t) return; t.iframe.src = t.iframe.src }
+popout.onclick = () => { const t=getTab(); if(!t) return; window.open(t.iframe.src,"_blank") }
 form.onsubmit = e => { e.preventDefault(); if(urlInput.value.trim()) navigate(urlInput.value) }
 newTabBtn.onclick = () => createTab()
 
 createTab()
 </script>
+
 </body>
 </html>
