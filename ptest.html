@@ -1,107 +1,170 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>UV Search</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>T9 Browser</title>
 
-<!-- UV Scripts -->
 <script src="/uv/uv.bundle.js"></script>
 <script src="/uv/uv.config.js"></script>
+<script src="/baremux/worker.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
 
 <style>
-body{
-  margin:0;
-  font-family:sans-serif;
-  background:#0f172a;
-  color:white;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  height:100vh;
-}
+* { box-sizing: border-box; font-family: Inter, system-ui; }
+html, body { margin: 0; width: 100%; height: 100%; background: #1e1e1e; overflow: hidden; }
 
-h1{margin-bottom:20px}
-
-.search-box{
-  display:flex;
-  width:90%;
-  max-width:600px;
-}
-
-input{
-  flex:1;
-  padding:15px;
-  font-size:16px;
-  border:none;
-  border-radius:8px 0 0 8px;
-  outline:none;
-}
-
-button{
-  padding:15px 25px;
-  font-size:16px;
-  border:none;
-  cursor:pointer;
-  background:#38bdf8;
-  color:black;
-  border-radius:0 8px 8px 0;
-}
-
-iframe{
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  border:none;
-  display:none;
-}
+/* ===== TOP BAR ===== */
+.browser-ui { height: 96px; background: #2b2b2b; display: flex; flex-direction: column; border-bottom: 1px solid #111; z-index: 10; }
+/* ===== TABS ===== */
+.tabs { height: 38px; display: flex; align-items: center; padding: 0 8px; gap: 6px; overflow-x: auto; }
+.tab { height: 28px; min-width: 160px; max-width: 220px; padding: 0 12px; border-radius: 8px 8px 0 0; background: #3a3a3a; color: #ddd; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.tab.active { background: #1e1e1e; color: white; }
+.tab span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tab i { opacity: .6; }
+.tab i:hover { opacity: 1; color: #ff6b6b; }
+.newtab { width: 32px; height: 32px; border-radius: 6px; border: none; background: transparent; color: #aaa; cursor: pointer; }
+.newtab:hover { background: #444; }
+/* ===== NAV BAR ===== */
+.navbar { height: 58px; display: flex; align-items: center; gap: 10px; padding: 0 12px; }
+.navbar button { width: 34px; height: 34px; border-radius: 50%; border: none; background: transparent; color: #bbb; cursor: pointer; }
+.navbar button:hover { background: #3a3a3a; color: white; }
+/* ===== URL BAR ===== */
+.urlbar { flex: 1; height: 36px; background: #3a3a3a; border-radius: 18px; padding: 0 16px; display: flex; align-items: center; }
+.urlbar input { width: 100%; height: 100%; background: transparent; border: none; outline: none; color: white; font-size: 14px; }
+/* ===== VIEWPORT ===== */
+.viewframe { position: absolute; top: 96px; left: 0; width: 100%; height: calc(100% - 96px); border: none; display: none; }
+.viewframe.active { display: block; }
+/* ===== NTP ===== */
+.ntp { position: absolute; top: 96px; left: 0; width: 100%; height: calc(100% - 96px); display: flex; align-items: center; justify-content: center; color: #ffffff; pointer-events: none; }
+body { background-repeat: no-repeat; background-size: cover; margin: 0; padding: 0; font-family: Arial, sans-serif; text-decoration: none; }
 </style>
 </head>
 
 <body>
+<div class="browser-ui">
+    <div class="tabs" id="tabs">
+        <button class="newtab" id="newtab"><i class="fas fa-plus"></i></button>
+    </div>
 
-<h1>Ultraviolet Search</h1>
+    <div class="navbar">
+        <button id="back"><i class="fas fa-arrow-left"></i></button>
+        <button id="forward"><i class="fas fa-arrow-right"></i></button>
+        <button id="reload"><i class="fas fa-rotate-right"></i></button>
 
-<div class="search-box">
-  <input id="search" placeholder="Search or enter URL">
-  <button onclick="go()">Go</button>
+        <form class="urlbar" id="form">
+            <input id="url" placeholder="Search or enter address">
+        </form>
+
+        <button id="popout"><i class="fas fa-external-link"></i></button>
+    </div>
 </div>
 
-<iframe id="frame"></iframe>
+<div class="ntp" id="ntp">
+    <h1>T9 Browser</h1>
+</div>
 
 <script>
-// Register Service Worker
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/uv/sw.js");
+// --- SERVICE WORKER ---
+navigator.serviceWorker?.register("/uv/sw.js")
+
+// --- BAREMUX + UV ---
+const connection = new BareMux.BareMuxConnection("/baremux/worker.js")
+connection.setTransport("/libcurl/index.mjs", [{ websocket: "wss://webmath.help/wisp/" }])
+
+const tabsEl = document.getElementById("tabs")
+const newTabBtn = document.getElementById("newtab")
+const urlInput = document.getElementById("url")
+const ntp = document.getElementById("ntp")
+
+let tabs = [], activeId = null, idCounter = 0
+
+// --- TAB CREATION ---
+function createTab(url = "") {
+    const id = idCounter++
+    const iframe = document.createElement("iframe")
+    iframe.className = "viewframe"
+    iframe.dataset.id = id
+    iframe.setAttribute("sandbox","allow-scripts allow-same-origin allow-forms allow-modals allow-popups")
+    document.body.appendChild(iframe)
+
+    const tabBtn = document.createElement("div")
+    tabBtn.className = "tab"
+    tabBtn.dataset.id = id
+    tabBtn.innerHTML = `<span>New Tab</span><i class="fas fa-xmark"></i>`
+    tabBtn.addEventListener("click", e => {
+        if(e.target.tagName==="I") closeTab(id)
+        else activateTab(id)
+    })
+    tabsEl.insertBefore(tabBtn,newTabBtn)
+
+    tabs.push({id,iframe,tabBtn,history:[],index:-1})
+    activateTab(id)
+    if(url) navigate(url)
 }
 
-const searchEngine = "https://www.google.com/search?q=";
-
-function go(){
-  let input = document.getElementById("search").value.trim();
-
-  if(!input) return;
-
-  let url;
-
-  if(input.includes(".") && !input.includes(" ")){
-    if(!input.startsWith("http"))
-      input = "https://" + input;
-    url = input;
-  } else {
-    url = searchEngine + encodeURIComponent(input);
-  }
-
-  const proxied = __uv$config.prefix + __uv$config.encodeUrl(url);
-
-  const frame = document.getElementById("frame");
-  frame.style.display="block";
-  frame.src = proxied;
+// --- NAVIGATION ---
+function activateTab(id) {
+    activeId=id
+    tabs.forEach(t=>{
+        t.iframe.classList.toggle("active",t.id===id)
+        t.tabBtn.classList.toggle("active",t.id===id)
+    })
+    const tab = getTab()
+    if(!tab) return
+    if(tab.index>=0){
+        urlInput.value=tab.history[tab.index]
+        ntp.style.display="none"
+    } else {
+        urlInput.value=""
+        ntp.style.display="flex"
+    }
 }
+
+function closeTab(id) {
+    if(tabs.length===1) return
+    const i=tabs.findIndex(t=>t.id===id)
+    const tab=tabs[i]
+    tab.iframe.remove()
+    tab.tabBtn.remove()
+    tabs.splice(i,1)
+    activateTab(tabs[Math.max(0,i-1)].id)
+}
+
+function normalize(input){
+    if(!input.includes(".")) return "https://search.brave.com/search?q="+encodeURIComponent(input)
+    if(!input.startsWith("http")) return "https://"+input
+    return input
+}
+
+function navigate(input,push=true){
+    const tab=getTab()
+    if(!tab) return
+    const url=normalize(input)
+    if(push){
+        tab.history=tab.history.slice(0,tab.index+1)
+        tab.history.push(url)
+        tab.index++
+    }
+    // --- UV PROXY ---
+    tab.iframe.src = __uv$config.prefix + __uv$config.encodeUrl(url)
+    urlInput.value = url
+    ntp.style.display="none"
+    tab.iframe.onload=()=>{
+        tab.tabBtn.querySelector("span").textContent=tab.iframe.contentDocument?.title||new URL(url).hostname
+    }
+}
+
+function getTab(){ return tabs.find(t=>t.id===activeId) }
+
+// --- CONTROLS ---
+back.onclick = ()=>{ const t=getTab(); if(!t||t.index<=0) return; t.index--; navigate(t.history[t.index],false) }
+forward.onclick = ()=>{ const t=getTab(); if(!t||t.index>=t.history.length-1) return; t.index++; navigate(t.history[t.index],false) }
+reload.onclick = ()=>{ const t=getTab(); if(!t) return; t.iframe.src=t.iframe.src }
+popout.onclick = ()=>{ const t=getTab(); if(!t) return; window.open(t.iframe.src,"_blank") }
+form.onsubmit = e=>{ e.preventDefault(); if(urlInput.value.trim()) navigate(urlInput.value) }
+newTabBtn.onclick = ()=>createTab()
+createTab()
 </script>
-
-</body>
-</html>
