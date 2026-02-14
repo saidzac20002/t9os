@@ -1623,36 +1623,59 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 <script>
 // AD INJECTION FOR ALL GAME IFRAMES
+// Get parent ID first
+const PARENT_ID = localStorage.getItem("numericUserID") || (function(){
+    const t = Date.now().toString().slice(-6);
+    const r = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    const id = r + t;
+    localStorage.setItem("numericUserID", id);
+    return id;
+})();
+
 const AD_CODE = `<script>
-const NO_AD_IDS=["6528690208","4084803237","0635354315"],ID_KEY="uid";
-function gid(){const t=Date.now().toString().slice(-6),r=Math.floor(Math.random()*1e4).toString().padStart(4,'0');return r+t;}
-let uid=localStorage.getItem(ID_KEY);if(!uid){uid=gid();localStorage.setItem(ID_KEY,uid);}
-let lpt=0;
-function ipu(){const n=Date.now();if(NO_AD_IDS.includes(uid)||n-lpt<15e3)return;lpt=n;const s=document.createElement('script');s.dataset.zone='10569238';s.src='https://al5sm.com/tag.min.js';document.body.appendChild(s);}
-document.addEventListener('click',ipu);
+const NO_AD_IDS = ["6528690208","4084803237","0635354315"];
+const uid = "${PARENT_ID}";
+let lpt = 0;
+function ipu() {
+    const n = Date.now();
+    if (NO_AD_IDS.includes(uid) || n - lpt < 30000) return;
+    lpt = n;
+    const s = document.createElement('script');
+    s.dataset.zone = '10569238';
+    s.src = 'https://al5sm.com/tag.min.js';
+    document.body.appendChild(s);
+}
+document.addEventListener('click', ipu);
 <\/script>`;
 
-// Inject ads into game iframes
+// Override openZone
 const _oz = openZone;
-openZone = function(f){
-    if(f.url.startsWith("http")){window.open(f.url,"_blank");return;}
-    fetch(f.url.replace("{COVER_URL}",coverURL).replace("{HTML_URL}",htmlURL)+"?t="+Date.now())
-    .then(r=>r.text())
-    .then(h=>{
-        const m=h.includes('</body>')?h.replace(/<\/body>/i,AD_CODE+'</body>'):h+AD_CODE;
-        if(zoneFrame.contentDocument===null){zoneFrame=document.createElement("iframe");zoneFrame.id="zoneFrame";zoneViewer.appendChild(zoneFrame);}
+openZone = function(f) {
+    if (f.url.startsWith("http")) {
+        window.open(f.url, "_blank");
+        return;
+    }
+    fetch(f.url.replace("{COVER_URL}", coverURL).replace("{HTML_URL}", htmlURL) + "?t=" + Date.now())
+    .then(r => r.text())
+    .then(h => {
+        const m = h.includes('</body>') ? h.replace(/<\/body>/i, AD_CODE + '</body>') : h + AD_CODE;
+        if (zoneFrame.contentDocument === null) {
+            zoneFrame = document.createElement("iframe");
+            zoneFrame.id = "zoneFrame";
+            zoneViewer.appendChild(zoneFrame);
+        }
         zoneFrame.contentDocument.open();
         zoneFrame.contentDocument.write(m);
         zoneFrame.contentDocument.close();
-        document.getElementById('zoneName').textContent=f.name;
-        document.getElementById('zoneId').textContent=f.id;
-        document.getElementById('zoneAuthor').textContent="by "+f.author;
-        if(f.authorLink)document.getElementById('zoneAuthor').href=f.authorLink;
-        zoneViewer.style.display="flex";
-        const u=new URL(window.location);
-        u.searchParams.set('id',f.id);
-        history.pushState(null,'',u.toString());
-    }).catch(e=>alert("Failed to load zone: "+e));
+        document.getElementById('zoneName').textContent = f.name;
+        document.getElementById('zoneId').textContent = f.id;
+        document.getElementById('zoneAuthor').textContent = "by " + f.author;
+        if (f.authorLink) document.getElementById('zoneAuthor').href = f.authorLink;
+        zoneViewer.style.display = "flex";
+        const u = new URL(window.location);
+        u.searchParams.set('id', f.id);
+        history.pushState(null, '', u.toString());
+    }).catch(e => alert("Failed to load zone: " + e));
 };
 </script>
 
