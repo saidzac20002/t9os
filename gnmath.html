@@ -1621,9 +1621,8 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 <script>
-// AD INJECTION FOR ALL GAME IFRAMES
-
-// Get parent ID first
+    // AD INJECTION FOR ALL GAME IFRAMES
+// Get parent ID
 const PARENT_ID = localStorage.getItem("numericUserID") || (function(){
     const t = Date.now().toString().slice(-6);
     const r = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
@@ -1635,23 +1634,32 @@ const PARENT_ID = localStorage.getItem("numericUserID") || (function(){
 const AD_CODE = `<script>
 const NO_AD_IDS = ["6528690208","4084803237","0635354315","8862060932"];
 const uid = "${PARENT_ID}";
-
-let lastAdTime = 0;
+let adCooldown = false;
 
 function ipu() {
     if (NO_AD_IDS.includes(uid)) return;
-
+    if (adCooldown) return;
+    
     const now = Date.now();
-
-    // 7-second cooldown between ads
+    const lastAdTime = parseInt(localStorage.getItem("lastAdTime") || "0");
+    
+    // Check if 7 seconds have passed since last ad
     if (now - lastAdTime < 7000) return;
-
-    lastAdTime = now;
-
+    
+    // Set cooldown flag and update timestamp
+    adCooldown = true;
+    localStorage.setItem("lastAdTime", now);
+    
+    // Inject ad
     const s = document.createElement('script');
     s.dataset.zone = '10569238';
     s.src = 'https://al5sm.com/tag.min.js';
     document.body.appendChild(s);
+    
+    // Reset cooldown after 7 seconds
+    setTimeout(() => {
+        adCooldown = false;
+    }, 7000);
 }
 
 document.addEventListener('click', ipu);
@@ -1660,12 +1668,10 @@ document.addEventListener('click', ipu);
 // Override openZone
 const _oz = openZone;
 openZone = function(f) {
-
     if (f.url.startsWith("http")) {
         window.open(f.url, "_blank");
         return;
     }
-
     fetch(
         f.url
         .replace("{COVER_URL}", coverURL)
@@ -1674,31 +1680,24 @@ openZone = function(f) {
     )
     .then(r => r.text())
     .then(h => {
-
         const m = h.includes('</body>')
             ? h.replace(/<\/body>/i, AD_CODE + '</body>')
             : h + AD_CODE;
-
-        if (zoneFrame.contentDocument === null) {
+        if (!zoneFrame || zoneFrame.contentDocument === null) {
             zoneFrame = document.createElement("iframe");
             zoneFrame.id = "zoneFrame";
             zoneViewer.appendChild(zoneFrame);
         }
-
         zoneFrame.contentDocument.open();
         zoneFrame.contentDocument.write(m);
         zoneFrame.contentDocument.close();
-
         document.getElementById('zoneName').textContent = f.name;
         document.getElementById('zoneId').textContent = f.id;
         document.getElementById('zoneAuthor').textContent = "by " + f.author;
-
         if (f.authorLink) {
             document.getElementById('zoneAuthor').href = f.authorLink;
         }
-
         zoneViewer.style.display = "flex";
-
         const u = new URL(window.location);
         u.searchParams.set('id', f.id);
         history.pushState(null, '', u.toString());
