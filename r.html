@@ -198,13 +198,13 @@ body{
 
 <script>
 // Check if we're on t9os.space to determine proxy mode
-const isT9OS = location.hostname === "t9os.com" || location.hostname === "www.t9os.com";
+const isT9OS = location.hostname === "t9os.space" || location.hostname === "www.t9os.space";
 const USE_CODETABS_PROXY = isT9OS;
 
 navigator.serviceWorker?.register("/uv/sw.js")
 
 const connection = new BareMux.BareMuxConnection("/baremux/worker.js")
-connection.setTransport("/libcurl/index.mjs", [{ websocket: "wss://webmath.help/wisp/" }])
+connection.setTransport("/epoxy/index.mjs", [{ wisp: "wss://webmath.help/wisp/" }])
 
 const tabsEl = document.getElementById("tabs")
 const newTabBtn = document.getElementById("newtab")
