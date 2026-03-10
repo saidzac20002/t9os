@@ -204,7 +204,7 @@ const USE_CODETABS_PROXY = isT9OS;
 navigator.serviceWorker?.register("/uv/sw.js")
 
 const connection = new BareMux.BareMuxConnection("/baremux/worker.js")
-connection.setTransport("/epoxy/index.mjs", [{ wisp: "wss://webmath.help/wisp/" }])
+connection.setTransport("/epoxy/index.mjs", [{ wisp: "wss://t9os.space/bare/" }])
 
 const tabsEl = document.getElementById("tabs")
 const newTabBtn = document.getElementById("newtab")
