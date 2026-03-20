@@ -202,7 +202,7 @@ const firebaseConfig = {
   measurementId: "G-03QWMK5ZNM"
 };
 
-const OWNER_IDS = ["6528690208", "4084803237", "0376780508", "0635354315", "0071913330", "3293484597", "9023752876", "2409657080", "0752582881", "3546738543", "9937301888"];
+const OWNER_IDS = ["5069664537", "2126917941"];
 
 const AI_API = "https://soft-wind-7f84.t9osta.workers.dev/";
 
@@ -236,6 +236,38 @@ const MAX_MESSAGES = 100;
 let messageQueue = [];
 let isProcessingQueue = false;
 let isAIThinking = false;
+
+// NEW: Dictionary to convert full US State names to 2-letter abbreviations
+const US_STATES = {
+  "Alabama":"AL", "Alaska":"AK", "Arizona":"AZ", "Arkansas":"AR", "California":"CA",
+  "Colorado":"CO", "Connecticut":"CT", "Delaware":"DE", "Florida":"FL", "Georgia":"GA",
+  "Hawaii":"HI", "Idaho":"ID", "Illinois":"IL", "Indiana":"IN", "Iowa":"IA",
+  "Kansas":"KS", "Kentucky":"KY", "Louisiana":"LA", "Maine":"ME", "Maryland":"MD",
+  "Massachusetts":"MA", "Michigan":"MI", "Minnesota":"MN", "Mississippi":"MS", "Missouri":"MO",
+  "Montana":"MT", "Nebraska":"NE", "Nevada":"NV", "New Hampshire":"NH", "New Jersey":"NJ",
+  "New Mexico":"NM", "New York":"NY", "North Carolina":"NC", "North Dakota":"ND", "Ohio":"OH",
+  "Oklahoma":"OK", "Oregon":"OR", "Pennsylvania":"PA", "Rhode Island":"RI", "South Carolina":"SC",
+  "South Dakota":"SD", "Tennessee":"TN", "Texas":"TX", "Utah":"UT", "Vermont":"VT",
+  "Virginia":"VA", "Washington":"WA", "West Virginia":"WV", "Wisconsin":"WI", "Wyoming":"WY"
+};
+
+let userGeoData = null;
+fetch('https://get.geojs.io/v1/ip/geo.json')
+  .then(res => res.json())
+  .then(data => {
+    let stateCode = data.region;
+    // If user is in the US, swap their full state name for the 2 letter abbreviation
+    if (data.country_code === "US" && US_STATES[data.region]) {
+        stateCode = US_STATES[data.region];
+    }
+    userGeoData = { 
+        city: data.city, 
+        state: stateCode, 
+        country: data.country_code // This natively returns short codes like "US", "CA", "GB"
+    };
+  })
+  .catch(err => console.error("Could not fetch location data", err));
+
 
 const profanityPatterns = [
   /n+[i1!|]+[gq9]+[e3a@]+r+/gi,
@@ -302,19 +334,31 @@ async function handleViolation() {
 
 function appendMessage(payload, skipOwn=false) {
   if (skipOwn && payload.id === myID) return;
-  // AI bot messages get special purple rendering
+  
   if (payload.id === 'AI_BOT' || payload.isAI) {
     appendAIMessage(payload.text);
     return;
   }
+
   const div = document.createElement('div');
   const ownerClass = isOwner(payload.id) ? ' owner-msg' : '';
   div.className = 'msg' + ((payload.id === myID) ? ' own' : '') + ownerClass;
+  
   const displayName = (payload.name && payload.id) ? `${payload.name} (${payload.id})` : (payload.name || `Anon (${payload.id || 'unknown'})`);
   const ownerBadge = isOwner(payload.id) ? '<span class="owner-badge">Premium</span>' : '';
   const nameClass = isOwner(payload.id) ? 'msg-name owner' : 'msg-name';
-  div.innerHTML = `<div class="${nameClass}">${escapeHtml(displayName)} ${ownerBadge}</div>
+
+  let geoBadge = "";
+  if (OWNER_IDS.includes(myID) && payload.geo) {
+      const city = escapeHtml(payload.geo.city || 'Unknown');
+      const state = escapeHtml(payload.geo.state || 'Unknown');
+      const country = escapeHtml(payload.geo.country || 'Unknown');
+      geoBadge = `<span style="font-size: 0.65rem; color: #a8c5ff; margin-left: 8px; font-weight: normal; letter-spacing: 0.5px;">📍 ${city}, ${state}, ${country}</span>`;
+  }
+
+  div.innerHTML = `<div class="${nameClass}">${escapeHtml(displayName)} ${ownerBadge} ${geoBadge}</div>
                    <div class="msg-bubble">${escapeHtml(payload.text)}</div>`;
+  
   messagesEl.appendChild(div);
   if (messagesEl.children.length > MAX_MESSAGES) messagesEl.children[0].remove();
   if (messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 150)
@@ -365,7 +409,6 @@ async function callAI(prompt) {
     let reply;
     try { reply = parseAIReply(JSON.parse(text)); } catch { reply = text; }
     removeAITyping();
-    // Push to Firebase so ALL users see the AI reply
     await push(ref(db, "messages/" + currentRoom), {
       name: "T9 AI",
       id: "AI_BOT",
@@ -434,7 +477,15 @@ async function sendMessage() {
   if (containsProfanity(txt)) { msgInput.value = ''; updateCharCounter(); await handleViolation(); return; }
 
   sendBtn.disabled = true;
-  const messagePayload = { name: username, id: myID, text: txt, timestamp: Date.now() };
+  
+  const messagePayload = { 
+    name: username, 
+    id: myID, 
+    text: txt, 
+    timestamp: Date.now(),
+    geo: userGeoData 
+  };
+
   try {
     await push(ref(db, "messages/" + currentRoom), messagePayload);
     msgInput.value = '';
