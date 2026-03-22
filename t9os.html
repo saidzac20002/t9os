@@ -732,6 +732,9 @@ border: 1px solid rgba(255, 255, 255, 0.15);
   <a onclick="terminal()">
     <img src="terminal.png">
   </a>
+  <a onclick="s()">
+    <img src="www.png">
+  </a>
    <a onclick="ai()">
     <img src="ai.png">
   </a>
@@ -983,6 +986,51 @@ loadWidgetWeather();
 
 
 </div>
+<div id="wwwDiv">
+  <button class="close-btn" onclick="document.getElementById('wwwDiv').style.display = 'none';">●</button>
+    <button class="full-btn" onclick="fullscreenIframechat()">●</button>
+
+<h3 style="  left: 50%; color:white; top:-9.5px; position: absolute;   transform: translateX(-50%);      " >Browser</h3>
+ 
+
+
+
+<iframe id="framesearch" src="chat3.html"></iframe>
+  <style>
+    #framesearch{
+      width:100%;
+      height:95%;
+      bottom:0;
+      position: absolute;
+      border:none;
+      border-radius:0px 0px 15px 15px;
+      left:0;
+      border-top: 1px solid rgb(37, 37, 37);
+    }
+  
+  </style>
+
+
+
+    <script>
+    function fullscreenIframesearch() {
+      let iframe = document.getElementById("framesearch");
+      if (iframe.requestFullscreen) {
+        iframe.requestFullscreen();
+      } else if (iframe.mozRequestFullScreen) { 
+        iframe.mozRequestFullScreen();
+      } else if (iframe.webkitRequestFullscreen) { 
+        iframe.webkitRequestFullscreen();
+      } else if (iframe.msRequestFullscreen) { 
+        iframe.msRequestFullscreen();
+      }
+    }
+  </script>
+
+
+ 
+           
+</div>
 
 <div id="ChatDiv">
   <button class="close-btn" onclick="document.getElementById('ChatDiv').style.display = 'none';">●</button>
@@ -1186,7 +1234,12 @@ loadWidgetWeather();
 
           
 </div>
-
+<script>
+  function www(){
+    const div = document.getElementById('wwwDiv');
+    div.style.display = div.style.display === 'block' ? 'none' : 'block';
+  }
+</script>
 <script>
   function Chat(){
     const div = document.getElementById('ChatDiv');
@@ -1564,6 +1617,28 @@ box-shadow: 2px #141414;
   
 
   }
+      #wwwDiv {
+    display: none;
+    margin-top: 20px;
+    padding: 10px;
+background-color: rgba(5, 139, 196, 0.504);
+  border: 1px solid rgba(0,180,255,.5);
+    color: white;
+    inset: 0;
+    margin:auto;
+    position: fixed;
+    z-index: 1000;
+    border-radius:12px; 
+    width:70%;
+    height: 71%; 
+    overflow-x: hidden;
+    overflow-y: auto;
+box-shadow: 2px #141414;
+      animation: popIn2 0.5s ease-out forwards;
+
+  
+
+  }
   </style>
 
   <script>
@@ -1897,7 +1972,7 @@ requestAnimationFrame(trackFPS);
 
         <script>
     // List of div IDs
-    const divIds = ['aiDiv', 'hiddenDiv', 'settingsDiv', 'widgetDiv', 'musicDiv', 'searchDiv', 'emulatorDiv', 'hacksDiv', 'movieDiv', 'terminalDiv', 'ChatDiv', 'updateDiv', 'collabDiv', 'tnav', 'navbar', 'roDiv', 'calcDiv'];
+    const divIds = ['aiDiv', 'hiddenDiv', 'settingsDiv', 'widgetDiv', 'musicDiv', 'searchDiv', 'emulatorDiv', 'hacksDiv', 'movieDiv', 'terminalDiv', 'ChatDiv', 'updateDiv', 'collabDiv', 'tnav', 'navbar', 'roDiv', 'calcDiv', 'wwwDiv'];
 
     // Store each div's original colors when the page opens
     const originalColors = {};
@@ -2800,7 +2875,10 @@ document.getElementById("emulatorDiv"),
 document.getElementById("movieDiv"),
 document.getElementById("roDiv"),
 document.getElementById("settingsDiv"),
-document.getElementById("calcDiv")
+document.getElementById("calcDiv"),
+document.getElementById("wwwDiv"),
+
+
 
 
 
