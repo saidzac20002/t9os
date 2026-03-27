@@ -149,23 +149,22 @@
   </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js"></script>
 
 <script>
 const OWNER_IDS = ["6528690208", "3222695271", "0376780508", "0635354315", "3293484597"]; 
   const ID_KEY = "numericUserID";
 
    const banFirebaseConfig = {
-   apiKey: "AIzaSyCTUq6Hye-l6Lh2ylHQ4yOM-HUWODGgMtY",
-  authDomain: "chatty-boi-c876e.firebaseapp.com",
-  databaseURL: "https://chatty-boi-c876e-default-rtdb.firebaseio.com",
-  projectId: "chatty-boi-c876e",
-  storageBucket: "chatty-boi-c876e.firebasestorage.app",
-  messagingSenderId: "1073159135051",
-  appId: "1:1073159135051:web:8c991df26ea3c1eb84d2ce",
-  measurementId: "G-03QWMK5ZNM"
-  };
+     apiKey: "AIzaSyAprVpoD4IQodfmQLvD4vEZzTv34EOecu0",
+     authDomain: "t9os-chat.firebaseapp.com",
+     projectId: "t9os-chat",
+     storageBucket: "t9os-chat.firebasestorage.app",
+     messagingSenderId: "45341851807",
+     appId: "1:45341851807:web:d07b6910731441adba62aa",
+     measurementId: "G-H7XYTT8TZM"
+   };
 
   const banApp = firebase.initializeApp(banFirebaseConfig);
   const banDB = firebase.database(banApp);
