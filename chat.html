@@ -42,13 +42,13 @@
   </style>
 
   <!-- Firebase CDN scripts -->
-  <!--script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>-->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>
 <body>
   <h1 style="color:#ffffff; font-family: sans-serif; font:bold; outline: white;">CURRENTLLY FIXING</h1>
 
-  <!--<h2 style="color:#ffffff; font-family: sans-serif; font:bold; outline: white;">T9 OS chat</h2>
+  <h2 style="color:#ffffff; font-family: sans-serif; font:bold; outline: white;">T9 OS chat</h2>
   <input type="text" id="nameInput" placeholder="Enter your name..." />
   <div id="chatBox"></div>
   <input type="text" id="messageInput" placeholder="Type your message..." disabled />
@@ -109,11 +109,11 @@
     function sendMessage() {
       const message = messageInput.value.trim();
       if (message !== '' && username !== '') {
-        // 🚫 Block profanity
-        //if (containsProfanity(message)) {
-        //  window.location.href = "warn.html"; 
-        //  return;
-        //}
+         🚫 Block profanity
+        if (containsProfanity(message)) {
+          window.location.href = "warn.html"; 
+          return;
+        }
 
         const msgData = {
           text: message,
@@ -139,7 +139,7 @@
       chatBox.appendChild(msgDiv);
       chatBox.scrollTop = chatBox.scrollHeight;
     });
-  </script>-->
+  </script>
 
 </body>
 </html>
