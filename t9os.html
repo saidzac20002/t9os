@@ -3032,6 +3032,43 @@ document.addEventListener("mouseup",stopAll);
 document.addEventListener("mouseleave",stopAll);
 window.addEventListener("blur",stopAll);
 });
+
+window.addEventListener("message", (event) => {
+  if (!event.data || event.data.type !== "calc-window-y") return;
+
+  const calcFrame = document.getElementById("calcframe");
+  const calcDiv = document.getElementById("calcDiv");
+
+  if (!calcFrame || !calcDiv || event.source !== calcFrame.contentWindow) return;
+
+  const sliderValue = Number(event.data.value);
+  if (!Number.isFinite(sliderValue)) return;
+
+  const clampedPercent = Math.min(Math.max(sliderValue, 0), 100);
+  const rect = calcDiv.getBoundingClientRect();
+  const viewportHeight = window.innerHeight;
+  const windowHeight = rect.height;
+
+  const currentLeft = rect.left;
+  const currentTop = rect.top;
+  const maxTop = Math.max(0, viewportHeight - windowHeight);
+  const nextTop = Math.round((clampedPercent / 100) * maxTop);
+
+  const isCenteredLayout =
+    calcDiv.style.left === "" &&
+    calcDiv.style.top === "" &&
+    (getComputedStyle(calcDiv).inset !== "auto" || getComputedStyle(calcDiv).margin !== "0px");
+
+  if (isCenteredLayout) {
+    calcDiv.style.transform = "none";
+    calcDiv.style.margin = "0";
+    calcDiv.style.inset = "auto";
+    calcDiv.style.left = currentLeft + "px";
+    calcDiv.style.top = currentTop + "px";
+  }
+
+  calcDiv.style.top = nextTop + "px";
+});
 </script>
 <script>
  /**
