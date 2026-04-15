@@ -305,7 +305,10 @@
     const SUPABASE_URL = window.SUPABASE_URL || "https://xjludpzfbzljystpadde.supabase.co";
     const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || "sb_publishable_POcO9f9w1eQgbnKeMABmxQ_lQb-jVGU";
     const AUTH_URL = new URL("./auth.html", window.location.href).href;
-    const API_URL = new URL("./api/admin-users", window.location.href).href;
+    const API_CANDIDATES = [
+      new URL("/.netlify/functions/admin-users", window.location.origin).href,
+      new URL("./api/admin-users", window.location.href).href
+    ];
 
     const createUserForm = document.getElementById("createUserForm");
     const createButton = document.getElementById("createButton");
@@ -350,28 +353,43 @@
 
     async function apiRequest(method, body, query) {
       const token = await getAccessToken();
-      const url = new URL(API_URL);
+      let lastError = new Error("Request failed.");
 
-      if (query) {
-        Object.entries(query).forEach(([key, value]) => url.searchParams.set(key, value));
+      for (const candidate of API_CANDIDATES) {
+        const url = new URL(candidate);
+
+        if (query) {
+          Object.entries(query).forEach(([key, value]) => url.searchParams.set(key, value));
+        }
+
+        try {
+          const response = await fetch(url, {
+            method,
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`
+            },
+            body: body ? JSON.stringify(body) : undefined
+          });
+
+          const data = await response.json().catch(() => null);
+
+          if (response.ok) {
+            return data;
+          }
+
+          if (response.status === 404) {
+            lastError = new Error("Admin endpoint was not found on this host.");
+            continue;
+          }
+
+          throw new Error(data?.error || "Request failed.");
+        } catch (error) {
+          lastError = error;
+        }
       }
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: body ? JSON.stringify(body) : undefined
-      });
-
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        throw new Error(data?.error || "Request failed.");
-      }
-
-      return data;
+      throw lastError;
     }
 
     function formatDate(value) {
