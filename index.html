@@ -312,9 +312,9 @@
     </header>
 
     <section class="hero" id="home">
-        <h1>Learn Better, Together</h1>
+        <h1>click on the Get Started button</h1>
         <p>A modern learning platform for students of all levels</p>
-        <button class="cta-button" onclick="window.location.href='class.html'">Get Started</button>
+        <button class="cta-button" onclick="window.location.href='./dashboard/index.html'">Get Started</button>
     </section>
 
     <div class="container" id="subjects">
@@ -477,7 +477,7 @@
     if (sessionStorage.getItem("redirected")) return;
 
     sessionStorage.setItem("redirected", "true");
-    window.location.href = "class.html"; 
+    window.location.href = "./dashboard/index.html"; 
   }
 
   document.addEventListener("keydown", redirectOnce);
